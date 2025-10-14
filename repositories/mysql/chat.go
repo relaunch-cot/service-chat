@@ -8,6 +8,7 @@ import (
 
 	"github.com/relaunch-cot/lib-relaunch-cot/repositories/mysql"
 
+	libModels "github.com/relaunch-cot/lib-relaunch-cot/models"
 	pbBaseModels "github.com/relaunch-cot/lib-relaunch-cot/proto/base_models"
 )
 
@@ -19,6 +20,7 @@ type IMySqlChat interface {
 	CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error
 	SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*pbBaseModels.Message, error)
+	GetAllChatsFromUser(ctx *context.Context, userId int64) ([]*libModels.Chat, error)
 }
 
 func (r *mysqlResource) CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error {
@@ -131,6 +133,67 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int6
 	}
 
 	return messages, nil
+}
+
+func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId int64) ([]*libModels.Chat, error) {
+	baseQuery := fmt.Sprintf(
+		`SELECT
+    c.chatId,
+    c.createdAt,
+    c.createdBy,
+    u1.userId   AS user1_id,
+    u1.name AS user1_name,
+    u1.email AS user1_email,
+    u2.userId   AS user2_id,
+    u2.name AS user2_name,
+    u2.email AS user2_email
+FROM
+    chats c
+JOIN
+    users u1 ON c.user1_id = u1.userId
+JOIN
+    users u2 ON c.user2_id = u2.userId
+WHERE
+    c.user1_id = %d OR c.user2_id = %d;`,
+		userId, userId)
+
+	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	chats := make([]*libModels.Chat, 0)
+	for rows.Next() {
+		chat := &libModels.Chat{
+			User1: libModels.User{},
+			User2: libModels.User{},
+		}
+
+		err := rows.Scan(
+			&chat.ChatId,
+			&chat.CreatedAt,
+			&chat.CreatedBy,
+			&chat.User1.UserId,
+			&chat.User1.Name,
+			&chat.User1.Email,
+			&chat.User2.UserId,
+			&chat.User2.Name,
+			&chat.User2.Email,
+		)
+		if err != nil {
+			return nil, errors.New("error scanning mysql row: " + err.Error())
+		}
+
+		chats = append(chats, chat)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, errors.New("row iteration error: " + err.Error())
+	}
+
+	return chats, nil
 }
 
 func NewMysqlRepository(client *mysql.Client) IMySqlChat {

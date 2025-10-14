@@ -40,6 +40,15 @@ func (r *chatResource) GetAllMessagesFromChat(ctx context.Context, in *pb.GetAll
 	return response, nil
 }
 
+func (r *chatResource) GetAllChatsFromUser(ctx context.Context, in *pb.GetAllChatsFromUserRequest) (*pb.GetAllChatsFromUserResponse, error) {
+	response, err := r.handler.Chat.GetAllChatsFromUser(&ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func NewChatServer(handler *handler.Handlers) pb.ChatServiceServer {
 	return &chatResource{
 		handler: handler,

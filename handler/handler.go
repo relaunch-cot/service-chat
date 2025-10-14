@@ -5,12 +5,14 @@ import (
 
 	pb "github.com/relaunch-cot/lib-relaunch-cot/proto/chat"
 	"github.com/relaunch-cot/service-chat/repositories"
+	"github.com/relaunch-cot/service-chat/resource/transformer"
 )
 
 type IChatHandler interface {
 	CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error
 	SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*pb.GetAllMessagesFromChatResponse, error)
+	GetAllChatsFromUser(ctx *context.Context, userId int64) (*pb.GetAllChatsFromUserResponse, error)
 }
 
 type resource struct {
@@ -46,6 +48,24 @@ func (r *resource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*
 	}
 
 	return getAllMessagesFromChatResponse, nil
+}
+
+func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId int64) (*pb.GetAllChatsFromUserResponse, error) {
+	mysqlResponse, err := r.repositories.Mysql.GetAllChatsFromUser(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	allChatsFromUserToBaseModels, err := transformer.GetAllChatsFromUserToBaseModels(mysqlResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	getAllChatsFromUserResponse := &pb.GetAllChatsFromUserResponse{
+		Chats: allChatsFromUserToBaseModels,
+	}
+
+	return getAllChatsFromUserResponse, nil
 }
 
 func NewChatHandler(repositories *repositories.Repositories) IChatHandler {
