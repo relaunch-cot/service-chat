@@ -43,8 +43,13 @@ func (r *resource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*
 		return nil, err
 	}
 
+	baseModelsMessage, err := transformer.GetAllMessagesFromChatToBaseModels(mysqlResponse)
+	if err != nil {
+		return nil, err
+	}
+
 	getAllMessagesFromChatResponse := &pb.GetAllMessagesFromChatResponse{
-		Messages: mysqlResponse,
+		Messages: baseModelsMessage,
 	}
 
 	return getAllMessagesFromChatResponse, nil
@@ -56,13 +61,13 @@ func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId int64) (*pb.
 		return nil, err
 	}
 
-	allChatsFromUserToBaseModels, err := transformer.GetAllChatsFromUserToBaseModels(mysqlResponse)
+	baseModelsChats, err := transformer.GetAllChatsFromUserToBaseModels(mysqlResponse)
 	if err != nil {
 		return nil, err
 	}
 
 	getAllChatsFromUserResponse := &pb.GetAllChatsFromUserResponse{
-		Chats: allChatsFromUserToBaseModels,
+		Chats: baseModelsChats,
 	}
 
 	return getAllChatsFromUserResponse, nil

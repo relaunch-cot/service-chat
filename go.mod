@@ -4,7 +4,7 @@ go 1.24.8
 
 require (
 	github.com/golang/protobuf v1.5.4
-	github.com/relaunch-cot/lib-relaunch-cot v0.0.0-20251014183303-999b19adc5d1
+	github.com/relaunch-cot/lib-relaunch-cot v0.0.0-20251014184935-0e37e193dea9
 	google.golang.org/grpc v1.73.0
 )
 

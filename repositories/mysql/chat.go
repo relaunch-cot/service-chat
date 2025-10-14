@@ -9,7 +9,6 @@ import (
 	"github.com/relaunch-cot/lib-relaunch-cot/repositories/mysql"
 
 	libModels "github.com/relaunch-cot/lib-relaunch-cot/models"
-	pbBaseModels "github.com/relaunch-cot/lib-relaunch-cot/proto/base_models"
 )
 
 type mysqlResource struct {
@@ -19,7 +18,7 @@ type mysqlResource struct {
 type IMySqlChat interface {
 	CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error
 	SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error
-	GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*pbBaseModels.Message, error)
+	GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*libModels.Message, error)
 	GetAllChatsFromUser(ctx *context.Context, userId int64) ([]*libModels.Chat, error)
 }
 
@@ -100,7 +99,7 @@ func (r *mysqlResource) SendMessage(ctx *context.Context, chatId, senderId int64
 	return nil
 }
 
-func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*pbBaseModels.Message, error) {
+func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*libModels.Message, error) {
 	baseQuery := fmt.Sprintf(`SELECT * FROM messages WHERE chatId = %d`, chatId)
 
 	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
@@ -110,9 +109,9 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int6
 
 	defer rows.Close()
 
-	messages := make([]*pbBaseModels.Message, 0)
+	messages := make([]*libModels.Message, 0)
 	for rows.Next() {
-		message := &pbBaseModels.Message{}
+		message := &libModels.Message{}
 
 		err := rows.Scan(
 			&message.MessageId,
