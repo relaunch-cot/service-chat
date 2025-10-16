@@ -3,24 +3,26 @@ package handler
 import (
 	"context"
 
+	"github.com/google/uuid"
 	pb "github.com/relaunch-cot/lib-relaunch-cot/proto/chat"
 	"github.com/relaunch-cot/service-chat/repositories"
 	"github.com/relaunch-cot/service-chat/resource/transformer"
 )
 
 type IChatHandler interface {
-	CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error
-	SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error
-	GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*pb.GetAllMessagesFromChatResponse, error)
-	GetAllChatsFromUser(ctx *context.Context, userId int64) (*pb.GetAllChatsFromUserResponse, error)
+	CreateNewChat(ctx *context.Context, createdBy string, userIds []string) error
+	SendMessage(ctx *context.Context, chatId, senderId, messageContent string) error
+	GetAllMessagesFromChat(ctx *context.Context, chatId string) (*pb.GetAllMessagesFromChatResponse, error)
+	GetAllChatsFromUser(ctx *context.Context, userId string) (*pb.GetAllChatsFromUserResponse, error)
 }
 
 type resource struct {
 	repositories *repositories.Repositories
 }
 
-func (r *resource) CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error {
-	err := r.repositories.Mysql.CreateNewChat(ctx, createdBy, userIds)
+func (r *resource) CreateNewChat(ctx *context.Context, createdBy string, userIds []string) error {
+	chatId := uuid.New()
+	err := r.repositories.Mysql.CreateNewChat(ctx, chatId.String(), createdBy, userIds)
 	if err != nil {
 		return err
 	}
@@ -28,8 +30,9 @@ func (r *resource) CreateNewChat(ctx *context.Context, createdBy int64, userIds 
 	return nil
 }
 
-func (r *resource) SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error {
-	err := r.repositories.Mysql.SendMessage(ctx, chatId, senderId, messageContent)
+func (r *resource) SendMessage(ctx *context.Context, chatId, senderId, messageContent string) error {
+	messageId := uuid.New()
+	err := r.repositories.Mysql.SendMessage(ctx, messageId.String(), chatId, senderId, messageContent)
 	if err != nil {
 		return err
 	}
@@ -37,7 +40,7 @@ func (r *resource) SendMessage(ctx *context.Context, chatId, senderId int64, mes
 	return nil
 }
 
-func (r *resource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*pb.GetAllMessagesFromChatResponse, error) {
+func (r *resource) GetAllMessagesFromChat(ctx *context.Context, chatId string) (*pb.GetAllMessagesFromChatResponse, error) {
 	mysqlResponse, err := r.repositories.Mysql.GetAllMessagesFromChat(ctx, chatId)
 	if err != nil {
 		return nil, err
@@ -55,7 +58,7 @@ func (r *resource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) (*
 	return getAllMessagesFromChatResponse, nil
 }
 
-func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId int64) (*pb.GetAllChatsFromUserResponse, error) {
+func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId string) (*pb.GetAllChatsFromUserResponse, error) {
 	mysqlResponse, err := r.repositories.Mysql.GetAllChatsFromUser(ctx, userId)
 	if err != nil {
 		return nil, err

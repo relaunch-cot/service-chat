@@ -16,20 +16,20 @@ type mysqlResource struct {
 }
 
 type IMySqlChat interface {
-	CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error
-	SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error
-	GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*libModels.Message, error)
-	GetAllChatsFromUser(ctx *context.Context, userId int64) ([]*libModels.Chat, error)
+	CreateNewChat(ctx *context.Context, chatId, createdBy string, userIds []string) error
+	SendMessage(ctx *context.Context, messageId, chatId, senderId, messageContent string) error
+	GetAllMessagesFromChat(ctx *context.Context, chatId string) ([]*libModels.Message, error)
+	GetAllChatsFromUser(ctx *context.Context, userId string) ([]*libModels.Chat, error)
 }
 
-func (r *mysqlResource) CreateNewChat(ctx *context.Context, createdBy int64, userIds []int64) error {
+func (r *mysqlResource) CreateNewChat(ctx *context.Context, chatId, createdBy string, userIds []string) error {
 	currentDate := time.Now()
 
 	queryValidate := fmt.Sprintf(
 		`SELECT * 
 					FROM chats 
-					WHERE user1_id = %d AND user2_id = %d
-					OR user1_id = %d AND user2_id = %d`,
+					WHERE user1_id = '%s' AND user2_id = '%s'
+					OR user1_id = '%s' AND user2_id = '%s'`,
 		userIds[0], userIds[1], userIds[0], userIds[1],
 	)
 	rows, err := mysql.DB.QueryContext(*ctx, queryValidate)
@@ -43,7 +43,8 @@ func (r *mysqlResource) CreateNewChat(ctx *context.Context, createdBy int64, use
 	}
 
 	basequery := fmt.Sprintf(
-		"INSERT INTO chats (createdBy, user1_id, user2_id, createdAt) VALUES(%d, %d, %d, '%s')",
+		"INSERT INTO chats (chatId, createdBy, user1_id, user2_id, createdAt) VALUES('%s', '%s', '%s', '%s', '%s')",
+		chatId,
 		createdBy,
 		userIds[0],
 		userIds[1],
@@ -60,14 +61,14 @@ func (r *mysqlResource) CreateNewChat(ctx *context.Context, createdBy int64, use
 	return nil
 }
 
-func (r *mysqlResource) SendMessage(ctx *context.Context, chatId, senderId int64, messageContent string) error {
+func (r *mysqlResource) SendMessage(ctx *context.Context, messageId, chatId, senderId, messageContent string) error {
 	currentDate := time.Now()
 
 	queryValidation := fmt.Sprintf(
 		`SELECT * 
 					FROM chats 
-					WHERE chatId = %d 
-					    AND user1_id = %d OR user2_id = %d`,
+					WHERE chatId = '%s' 
+					    AND user1_id = '%s' OR user2_id = '%s'`,
 		chatId, senderId, senderId,
 	)
 
@@ -82,7 +83,8 @@ func (r *mysqlResource) SendMessage(ctx *context.Context, chatId, senderId int64
 	}
 
 	basequery := fmt.Sprintf(
-		"INSERT INTO messages (chatId, senderId, content, createdAt) VALUES(%d, %d, '%s', '%s')",
+		"INSERT INTO messages (id, chatId, senderId, content, createdAt) VALUES('%s', '%s', '%s', '%s', '%s')",
+		messageId,
 		chatId,
 		senderId,
 		messageContent,
@@ -99,8 +101,8 @@ func (r *mysqlResource) SendMessage(ctx *context.Context, chatId, senderId int64
 	return nil
 }
 
-func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int64) ([]*libModels.Message, error) {
-	baseQuery := fmt.Sprintf(`SELECT * FROM messages WHERE chatId = %d`, chatId)
+func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId string) ([]*libModels.Message, error) {
+	baseQuery := fmt.Sprintf(`SELECT * FROM messages WHERE chatId = '%s' ORDER BY createdAt ASC`, chatId)
 
 	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
 	if err != nil {
@@ -134,7 +136,7 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId int6
 	return messages, nil
 }
 
-func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId int64) ([]*libModels.Chat, error) {
+func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId string) ([]*libModels.Chat, error) {
 	baseQuery := fmt.Sprintf(
 		`SELECT
     c.chatId,
@@ -153,7 +155,7 @@ JOIN
 JOIN
     users u2 ON c.user2_id = u2.userId
 WHERE
-    c.user1_id = %d OR c.user2_id = %d;`,
+    c.user1_id = '%s' OR c.user2_id = '%s' ORDER BY c.createdAt ASC`,
 		userId, userId)
 
 	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
