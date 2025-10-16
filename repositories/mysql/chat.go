@@ -2,11 +2,12 @@ package mysql
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/relaunch-cot/lib-relaunch-cot/repositories/mysql"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	libModels "github.com/relaunch-cot/lib-relaunch-cot/models"
 )
@@ -34,12 +35,12 @@ func (r *mysqlResource) CreateNewChat(ctx *context.Context, chatId, createdBy st
 	)
 	rows, err := mysql.DB.QueryContext(*ctx, queryValidate)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
 	if rows.Next() {
-		return errors.New("already exists an chat with these participants")
+		return status.Error(codes.AlreadyExists, "already exists an chat with these participants")
 	}
 
 	basequery := fmt.Sprintf(
@@ -53,7 +54,7 @@ func (r *mysqlResource) CreateNewChat(ctx *context.Context, chatId, createdBy st
 
 	rows, err = mysql.DB.QueryContext(*ctx, basequery)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
@@ -74,12 +75,12 @@ func (r *mysqlResource) SendMessage(ctx *context.Context, messageId, chatId, sen
 
 	rows, err := mysql.DB.QueryContext(*ctx, queryValidation)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
 	if !rows.Next() {
-		return errors.New("this user is not part of this chat")
+		return status.Error(codes.NotFound, "this user is not part of this chat")
 	}
 
 	basequery := fmt.Sprintf(
@@ -93,7 +94,7 @@ func (r *mysqlResource) SendMessage(ctx *context.Context, messageId, chatId, sen
 
 	rows, err = mysql.DB.QueryContext(*ctx, basequery)
 	if err != nil {
-		return err
+		return status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
@@ -106,7 +107,7 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId stri
 
 	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
@@ -123,14 +124,14 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId stri
 			&message.CreatedAt,
 		)
 		if err != nil {
-			return nil, errors.New("error scanning mysql row: " + err.Error())
+			return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
 		}
 
 		messages = append(messages, message)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errors.New("row iteration error: " + err.Error())
+		return nil, status.Error(codes.Internal, "row iteration error: "+err.Error())
 	}
 
 	return messages, nil
@@ -160,7 +161,7 @@ WHERE
 
 	rows, err := mysql.DB.QueryContext(*ctx, baseQuery)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "error with database. Details: "+err.Error())
 	}
 
 	defer rows.Close()
@@ -184,14 +185,14 @@ WHERE
 			&chat.User2.Email,
 		)
 		if err != nil {
-			return nil, errors.New("error scanning mysql row: " + err.Error())
+			return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
 		}
 
 		chats = append(chats, chat)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errors.New("row iteration error: " + err.Error())
+		return nil, status.Error(codes.Internal, "row iteration error: "+err.Error())
 	}
 
 	return chats, nil
