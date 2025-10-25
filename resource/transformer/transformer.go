@@ -40,3 +40,19 @@ func GetAllMessagesFromChatToBaseModels(in []*libModels.Message) ([]*pbBaseModel
 
 	return message, nil
 }
+
+func GetChatFromUsersToBaseModels(in *libModels.Chat) (*pbBaseModels.Chat, error) {
+	var chat pbBaseModels.Chat
+
+	b, err := json.Marshal(in)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Error marshalling chat model: "+err.Error())
+	}
+
+	err = json.Unmarshal(b, &chat)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Error unmarshalling chat model: "+err.Error())
+	}
+
+	return &chat, nil
+}

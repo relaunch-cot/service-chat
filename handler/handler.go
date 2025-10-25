@@ -14,6 +14,7 @@ type IChatHandler interface {
 	SendMessage(ctx *context.Context, chatId, senderId, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId string) (*pb.GetAllMessagesFromChatResponse, error)
 	GetAllChatsFromUser(ctx *context.Context, userId string) (*pb.GetAllChatsFromUserResponse, error)
+	GetChatFromUsers(ctx *context.Context, userIds []string) (*pb.GetChatFromUsersResponse, error)
 }
 
 type resource struct {
@@ -74,6 +75,24 @@ func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId string) (*pb
 	}
 
 	return getAllChatsFromUserResponse, nil
+}
+
+func (r *resource) GetChatFromUsers(ctx *context.Context, userIds []string) (*pb.GetChatFromUsersResponse, error) {
+	mysqlResponse, err := r.repositories.Mysql.GetChatFromUsers(ctx, userIds)
+	if err != nil {
+		return nil, err
+	}
+
+	baseModelsChat, err := transformer.GetChatFromUsersToBaseModels(mysqlResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	getChatFromUsersResponse := &pb.GetChatFromUsersResponse{
+		Chat: baseModelsChat,
+	}
+
+	return getChatFromUsersResponse, nil
 }
 
 func NewChatHandler(repositories *repositories.Repositories) IChatHandler {

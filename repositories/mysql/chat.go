@@ -21,6 +21,7 @@ type IMySqlChat interface {
 	SendMessage(ctx *context.Context, messageId, chatId, senderId, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId string) ([]*libModels.Message, error)
 	GetAllChatsFromUser(ctx *context.Context, userId string) ([]*libModels.Chat, error)
+	GetChatFromUsers(ctx *context.Context, userIds []string) (*libModels.Chat, error)
 }
 
 func (r *mysqlResource) CreateNewChat(ctx *context.Context, chatId, createdBy string, userIds []string) error {
@@ -196,6 +197,55 @@ WHERE
 	}
 
 	return chats, nil
+}
+
+func (r *mysqlResource) GetChatFromUsers(ctx *context.Context, userIds []string) (*libModels.Chat, error) {
+	baseQuery := fmt.Sprintf(
+		`SELECT
+	c.chatId,
+	c.createdAt,
+	c.createdBy,
+	u1.userId   AS user1_id,
+	u1.name AS user1_name,
+	u1.email AS user1_email,
+	u2.userId   AS user2_id,
+	u2.name AS user2_name,
+	u2.email AS user2_email
+FROM
+	chats c
+JOIN
+	users u1 ON c.user1_id = u1.userId
+JOIN
+	users u2 ON c.user2_id = u2.userId
+WHERE
+	(c.user1_id = '%s' AND c.user2_id = '%s')
+	OR (c.user1_id = '%s' AND c.user2_id = '%s')`,
+		userIds[0], userIds[1], userIds[1], userIds[0],
+	)
+
+	row := mysql.DB.QueryRowContext(*ctx, baseQuery)
+
+	chat := &libModels.Chat{
+		User1: libModels.User{},
+		User2: libModels.User{},
+	}
+
+	err := row.Scan(
+		&chat.ChatId,
+		&chat.CreatedAt,
+		&chat.CreatedBy,
+		&chat.User1.UserId,
+		&chat.User1.Name,
+		&chat.User1.Email,
+		&chat.User2.UserId,
+		&chat.User2.Name,
+		&chat.User2.Email,
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
+	}
+
+	return chat, nil
 }
 
 func NewMysqlRepository(client *mysql.Client) IMySqlChat {
