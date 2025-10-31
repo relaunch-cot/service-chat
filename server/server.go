@@ -58,6 +58,15 @@ func (r *chatResource) GetChatFromUsers(ctx context.Context, in *pb.GetChatFromU
 	return response, nil
 }
 
+func (r *chatResource) GetChatById(ctx context.Context, in *pb.GetChatByIdRequest) (*pb.GetChatByIdResponse, error) {
+	response, err := r.handler.Chat.GetChatById(&ctx, in.ChatId)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func NewChatServer(handler *handler.Handlers) pb.ChatServiceServer {
 	return &chatResource{
 		handler: handler,
