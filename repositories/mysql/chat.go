@@ -147,15 +147,15 @@ func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId string)
     c.chatId,
     c.createdAt,
     c.createdBy,
-    u1.userId        AS user1_id,
-    u1.name          AS user1_name,
-    u1.email         AS user1_email,
-    u1.urlImageUser  AS user1_image,
+    u1.userId        			 AS user1_id,
+    u1.name          			 AS user1_name,
+    u1.email         			 AS user1_email,
+    IFNULL(u1.urlImageUser, "")  AS user1_image,
 
-    u2.userId        AS user2_id,
-    u2.name          AS user2_name,
-    u2.email         AS user2_email,
-    u2.urlImageUser  AS user2_image
+    u2.userId        			 AS user2_id,
+    u2.name          			 AS user2_name,
+    u2.email         			 AS user2_email,
+    IFNULL(u2.urlImageUser, "")  AS user2_image
 FROM
     chats c
 JOIN
@@ -187,9 +187,11 @@ WHERE
 			&chat.User1.UserId,
 			&chat.User1.Name,
 			&chat.User1.Email,
+			&chat.User1.UrlImageUser,
 			&chat.User2.UserId,
 			&chat.User2.Name,
 			&chat.User2.Email,
+			&chat.User2.UrlImageUser,
 		)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
