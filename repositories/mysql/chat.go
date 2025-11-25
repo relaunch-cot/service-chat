@@ -140,17 +140,22 @@ func (r *mysqlResource) GetAllMessagesFromChat(ctx *context.Context, chatId stri
 }
 
 func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId string) ([]*libModels.Chat, error) {
+	var otherUser string
+
 	baseQuery := fmt.Sprintf(
 		`SELECT
     c.chatId,
     c.createdAt,
     c.createdBy,
-    u1.userId   AS user1_id,
-    u1.name AS user1_name,
-    u1.email AS user1_email,
-    u2.userId   AS user2_id,
-    u2.name AS user2_name,
-    u2.email AS user2_email
+    u1.userId        AS user1_id,
+    u1.name          AS user1_name,
+    u1.email         AS user1_email,
+    u1.urlImageUser  AS user1_image,
+
+    u2.userId        AS user2_id,
+    u2.name          AS user2_name,
+    u2.email         AS user2_email,
+    u2.urlImageUser  AS user2_image
 FROM
     chats c
 JOIN
@@ -188,6 +193,18 @@ WHERE
 		)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
+		}
+
+		if chat.User1.UserId == userId {
+			otherUser = "user2"
+		} else {
+			otherUser = "user1"
+		}
+
+		if otherUser == "user1" {
+			chat.OtherUserProfileImageUrl = chat.User1.UrlImageUser
+		} else {
+			chat.OtherUserProfileImageUrl = chat.User2.UrlImageUser
 		}
 
 		chats = append(chats, chat)
