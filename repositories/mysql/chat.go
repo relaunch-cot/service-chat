@@ -21,8 +21,8 @@ type IMySqlChat interface {
 	SendMessage(ctx *context.Context, messageId, chatId, senderId, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId string) ([]*libModels.Message, error)
 	GetAllChatsFromUser(ctx *context.Context, userId string) ([]*libModels.Chat, error)
-	GetChatFromUsers(ctx *context.Context, userIds []string) (*libModels.Chat, error)
-	GetChatById(ctx *context.Context, chatId string) (*libModels.Chat, error)
+	GetChatFromUsers(ctx *context.Context, userId string, userIds []string) (*libModels.Chat, error)
+	GetChatById(ctx *context.Context, userId, chatId string) (*libModels.Chat, error)
 }
 
 func (r *mysqlResource) CreateNewChat(ctx *context.Context, chatId, createdBy string, userIds []string) error {
@@ -149,12 +149,10 @@ func (r *mysqlResource) GetAllChatsFromUser(ctx *context.Context, userId string)
     c.createdBy,
     u1.userId        			 AS user1_id,
     u1.name          			 AS user1_name,
-    u1.email         			 AS user1_email,
     IFNULL(u1.urlImageUser, "")  AS user1_image,
 
     u2.userId        			 AS user2_id,
     u2.name          			 AS user2_name,
-    u2.email         			 AS user2_email,
     IFNULL(u2.urlImageUser, "")  AS user2_image
 FROM
     chats c
@@ -175,6 +173,8 @@ WHERE
 
 	chats := make([]*libModels.Chat, 0)
 	for rows.Next() {
+		var urlImageUser1, urlImageUser2 string
+
 		chat := &libModels.Chat{
 			User1: libModels.User{},
 			User2: libModels.User{},
@@ -186,12 +186,10 @@ WHERE
 			&chat.CreatedBy,
 			&chat.User1.UserId,
 			&chat.User1.Name,
-			&chat.User1.Email,
-			&chat.User1.UrlImageUser,
+			&urlImageUser1,
 			&chat.User2.UserId,
 			&chat.User2.Name,
-			&chat.User2.Email,
-			&chat.User2.UrlImageUser,
+			&urlImageUser2,
 		)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
@@ -204,9 +202,9 @@ WHERE
 		}
 
 		if otherUser == "user1" {
-			chat.OtherUserProfileImageUrl = chat.User1.UrlImageUser
+			chat.OtherUserProfileImageUrl = urlImageUser1
 		} else {
-			chat.OtherUserProfileImageUrl = chat.User2.UrlImageUser
+			chat.OtherUserProfileImageUrl = urlImageUser2
 		}
 
 		chats = append(chats, chat)
@@ -219,7 +217,9 @@ WHERE
 	return chats, nil
 }
 
-func (r *mysqlResource) GetChatFromUsers(ctx *context.Context, userIds []string) (*libModels.Chat, error) {
+func (r *mysqlResource) GetChatFromUsers(ctx *context.Context, userId string, userIds []string) (*libModels.Chat, error) {
+	var otherUser string
+
 	baseQuery := fmt.Sprintf(
 		`SELECT
 	c.chatId,
@@ -227,10 +227,10 @@ func (r *mysqlResource) GetChatFromUsers(ctx *context.Context, userIds []string)
 	c.createdBy,
 	u1.userId   AS user1_id,
 	u1.name AS user1_name,
-	u1.email AS user1_email,
+	IFNULL(u1.urlImageUser, "") AS user1_image,
 	u2.userId   AS user2_id,
 	u2.name AS user2_name,
-	u2.email AS user2_email
+	IFNULL(u2.urlImageUser, "") AS user2_image
 FROM
 	chats c
 JOIN
@@ -250,25 +250,41 @@ WHERE
 		User2: libModels.User{},
 	}
 
+	var urlImageUser1, urlImageUser2 string
+
 	err := row.Scan(
 		&chat.ChatId,
 		&chat.CreatedAt,
 		&chat.CreatedBy,
 		&chat.User1.UserId,
 		&chat.User1.Name,
-		&chat.User1.Email,
+		&urlImageUser1,
 		&chat.User2.UserId,
 		&chat.User2.Name,
-		&chat.User2.Email,
+		&urlImageUser2,
 	)
+
 	if err != nil {
 		return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
 	}
 
+	if chat.User1.UserId == userId {
+		otherUser = "user2"
+	} else {
+		otherUser = "user1"
+	}
+
+	if otherUser == "user1" {
+		chat.OtherUserProfileImageUrl = urlImageUser1
+	} else {
+		chat.OtherUserProfileImageUrl = urlImageUser2
+	}
 	return chat, nil
 }
 
-func (r *mysqlResource) GetChatById(ctx *context.Context, chatId string) (*libModels.Chat, error) {
+func (r *mysqlResource) GetChatById(ctx *context.Context, userId, chatId string) (*libModels.Chat, error) {
+	var otherUser string
+
 	baseQuery := fmt.Sprintf(
 		`SELECT
 	c.chatId,
@@ -276,10 +292,10 @@ func (r *mysqlResource) GetChatById(ctx *context.Context, chatId string) (*libMo
 	c.createdBy,
 	u1.userId   AS user1_id,
 	u1.name AS user1_name,
-	u1.email AS user1_email,
+	IFNULL(u1.urlImageUser, "") AS user1_image,
 	u2.userId   AS user2_id,
 	u2.name AS user2_name,
-	u2.email AS user2_email
+	IFNULL(u2.urlImageUser, "") AS user2_image
 FROM
 	chats c
 JOIN
@@ -298,19 +314,33 @@ WHERE
 		User2: libModels.User{},
 	}
 
+	var urlImageUser1, urlImageUser2 string
+
 	err := row.Scan(
 		&chat.ChatId,
 		&chat.CreatedAt,
 		&chat.CreatedBy,
 		&chat.User1.UserId,
 		&chat.User1.Name,
-		&chat.User1.Email,
+		&urlImageUser1,
 		&chat.User2.UserId,
 		&chat.User2.Name,
-		&chat.User2.Email,
+		&urlImageUser2,
 	)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "error scanning mysql row: "+err.Error())
+	}
+
+	if chat.User1.UserId == userId {
+		otherUser = "user2"
+	} else {
+		otherUser = "user1"
+	}
+
+	if otherUser == "user1" {
+		chat.OtherUserProfileImageUrl = urlImageUser1
+	} else {
+		chat.OtherUserProfileImageUrl = urlImageUser2
 	}
 
 	return chat, nil

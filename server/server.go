@@ -50,7 +50,7 @@ func (r *chatResource) GetAllChatsFromUser(ctx context.Context, in *pb.GetAllCha
 }
 
 func (r *chatResource) GetChatFromUsers(ctx context.Context, in *pb.GetChatFromUsersRequest) (*pb.GetChatFromUsersResponse, error) {
-	response, err := r.handler.Chat.GetChatFromUsers(&ctx, in.UserIds)
+	response, err := r.handler.Chat.GetChatFromUsers(&ctx, in.UserId, in.UserIds)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (r *chatResource) GetChatFromUsers(ctx context.Context, in *pb.GetChatFromU
 }
 
 func (r *chatResource) GetChatById(ctx context.Context, in *pb.GetChatByIdRequest) (*pb.GetChatByIdResponse, error) {
-	response, err := r.handler.Chat.GetChatById(&ctx, in.ChatId)
+	response, err := r.handler.Chat.GetChatById(&ctx, in.UserId, in.ChatId)
 	if err != nil {
 		return nil, err
 	}

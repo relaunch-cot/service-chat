@@ -14,8 +14,8 @@ type IChatHandler interface {
 	SendMessage(ctx *context.Context, chatId, senderId, messageContent string) error
 	GetAllMessagesFromChat(ctx *context.Context, chatId string) (*pb.GetAllMessagesFromChatResponse, error)
 	GetAllChatsFromUser(ctx *context.Context, userId string) (*pb.GetAllChatsFromUserResponse, error)
-	GetChatFromUsers(ctx *context.Context, userIds []string) (*pb.GetChatFromUsersResponse, error)
-	GetChatById(ctx *context.Context, chatId string) (*pb.GetChatByIdResponse, error)
+	GetChatFromUsers(ctx *context.Context, userId string, userIds []string) (*pb.GetChatFromUsersResponse, error)
+	GetChatById(ctx *context.Context, userId, chatId string) (*pb.GetChatByIdResponse, error)
 }
 
 type resource struct {
@@ -78,8 +78,8 @@ func (r *resource) GetAllChatsFromUser(ctx *context.Context, userId string) (*pb
 	return getAllChatsFromUserResponse, nil
 }
 
-func (r *resource) GetChatFromUsers(ctx *context.Context, userIds []string) (*pb.GetChatFromUsersResponse, error) {
-	mysqlResponse, err := r.repositories.Mysql.GetChatFromUsers(ctx, userIds)
+func (r *resource) GetChatFromUsers(ctx *context.Context, userId string, userIds []string) (*pb.GetChatFromUsersResponse, error) {
+	mysqlResponse, err := r.repositories.Mysql.GetChatFromUsers(ctx, userId, userIds)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,8 @@ func (r *resource) GetChatFromUsers(ctx *context.Context, userIds []string) (*pb
 	return getChatFromUsersResponse, nil
 }
 
-func (r *resource) GetChatById(ctx *context.Context, chatId string) (*pb.GetChatByIdResponse, error) {
-	mysqlResponse, err := r.repositories.Mysql.GetChatById(ctx, chatId)
+func (r *resource) GetChatById(ctx *context.Context, userId, chatId string) (*pb.GetChatByIdResponse, error) {
+	mysqlResponse, err := r.repositories.Mysql.GetChatById(ctx, userId, chatId)
 	if err != nil {
 		return nil, err
 	}
