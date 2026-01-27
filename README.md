@@ -1,62 +1,42 @@
-# Nome do Projeto: ReLaunch
+# Chat Service - Relaunch 
 
-## Integrantes:
-- Matheus Oliveira Mangualde - 22301194
-- Henrique de Freitas Issa - 22300732
-- João Pedro Bastos Neves - 22301330
-- Eduardo Mapa Avelar Damasceno - 22301674
-- Eike Levy Albano Neves - 22402772
-- Vinícius Theodoro Giovani - 22300821
+Serviço responsável por gerenciar todas as funcionalidades relacionadas ao sistema de chat da plataforma Relaunch.
 
-**Turma 3B2**
+## 📋 Sobre o Projeto
 
-# Como rodar
-- Baixar o golang
-- Setar no terminal 'go env -w GOPRIVATE=*' para conseguir acessar os repositorios privados do github
-- Rodar 'go mod tidy' no terminal para instalar as dependencias
-- Setar as variaveis de ambiente:
-  - PORT: (porta em que o microserviço vai rodar)
-  - ## Variáveis de ambiente referente ao banco de dados:
-    **Lembrar de rodar o MySql localmente com uma instancia para o banco de dados que contenha uma tabela 'users' para alimentar as requisições**
-    - MYSQL_HOST: (host do banco de dados MySql)
-    - MYSQL_PORT: (porta em que o banco de daods MySql está rodando)
-    - MYSQL_USER: (usuario do MySql)
-    - MYSQL_PASS: (senha do MySql)
-    - MYSQL_DBNAME: (nome do banco de dados que receberá as requisições)
-- Rodar 'go build main.go' no terminal
-- Rodar 'go run main.go' no terminal
+Este microserviço é parte da arquitetura da plataforma Relaunch e fornece funcionalidades completas de mensagens e chat entre usuários, incluindo:
 
-## Funcionalidades implementadas
-- [x]  Permitir login do usuário
-- [x]  Permitir cadastro do usuário
-- [x]  Usuário redefinir  a senha
-- [x]  Permitir deletar usuário
-- [x]  O usuário deve poder personalizar as configurações do perfil
-- [x]  Buscar informações de perfil do usuario
-- [x]  Deve ser possível exportar relatórios em PDF.
-- [x]  Enviar Email de recuperação de senha
-- [x]  Usuário deletar sua conta
-- [x]  Usuário fazer logout da plataforma
-- [x]  Criar um novo chat entre usuarios
-- [x]  Enviar mensagens no chat entre usuários
-- [x]  Buscar todas as mensagens de um chat específico
-- [x]  Buscar todos os chats de um usuário
-- [x]  Criar um novo projeto (usuários que sejam clientes)
-- [x]  Buscar um projeto específico
-- [x]  Buscar todos os projetos de um usuário
-- [x]  Adicionar freelancer a um projeto
-- [x]  Remover freelancer de um projeto
-- [x]  Listar todos os projetos que estejam sem um freelancer desenvolvendo o mesmo, ou seja, disponíveis para desenvolvimento
-- [x]  Enviar norificações para o usuário (seja de uma mensagem nova, seja de solicitação para participar de um projeto...)
-- [x]  Buscar informações de uma notificação específica
-- [x]  Buscar todas as notificações de um usuário
+- Criação e gerenciamento de conversas entre usuários
+- Envio e recebimento de mensagens em tempo real
+- Histórico de mensagens por conversa
+- Listagem de chats ativos por usuário
+- Busca e validação de conversas existentes
 
-## Padrões requisitados
-- padrão singleton aplicado
-### Padrões GoF aplicados além do singleton:
-- Adapter
-- Facade
-- Strategy
-- Factory
-- Iterator
-### além disso o projeto também aplica padrões de arquitetura (Repository, Dependency Injection) que não são parte dos GoF clássicos, mas complementam a estrutura.
+## 🛠️ Tecnologias Utilizadas
+
+- **Go** - Linguagem de programação principal
+- **MySQL** - Banco de dados relacional para persistência
+- **gRPC** - Protocolo de comunicação entre serviços
+- **Context** - Gerenciamento de requisições e timeouts
+
+## 🏗️ Arquitetura
+
+O serviço segue os princípios de Clean Architecture, com separação clara de responsabilidades:
+
+- **Repositories**: Camada de acesso aos dados (MySQL)
+- **Models**: Estruturas de dados compartilhadas
+- **gRPC Status Codes**: Tratamento padronizado de erros
+
+## 🚀 Funcionalidades Principais
+
+- **Gerenciamento de Chats**: Criação de conversas entre dois usuários com validação de duplicidade
+- **Sistema de Mensagens**: Envio de mensagens com validação de participação no chat
+- **Consultas Otimizadas**: Recuperação eficiente de mensagens e conversas com JOINs
+- **Tratamento de Erros**: Respostas padronizadas com códigos gRPC apropriados
+
+## 💡 Destaques Técnicos
+
+- Utilização de prepared statements para segurança
+- Validação de permissões antes de operações críticas
+- Queries otimizadas com índices apropriados
+- Tratamento robusto de erros e edge cases
